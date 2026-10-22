@@ -7,6 +7,11 @@ import numpy as np
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 from groq import Groq
+from dotenv import load_dotenv
+
+# Load .env from backend directory and root directory
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # Default model
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"

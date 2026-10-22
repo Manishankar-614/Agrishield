@@ -1,40 +1,113 @@
 import React, { useState } from 'react';
-import { Search, Send, CheckCircle2, AlertTriangle, Clock, Zap, BookOpen, Copy, Check } from 'lucide-react';
+import {
+  Search,
+  Send,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  Zap,
+  BookOpen,
+  Copy,
+  Check,
+  ShieldCheck,
+  Cpu,
+  Layers,
+  Sparkles,
+  Sun,
+  CloudRain,
+  DollarSign,
+  Tractor,
+  FlaskConical,
+  Flame,
+  ArrowRight
+} from 'lucide-react';
 import type { QueryResponse, RetrievedSource } from '../types';
 
 interface AskDocsViewProps {
   apiKey: string;
+  onOpenKeyModal: () => void;
 }
 
-const SAMPLE_QUERIES = [
+const SCHEME_CATEGORIES = [
   {
-    label: "⏱️ 72-Hour PMFBY Deadline",
-    text: "What is the mandatory time window to report crop loss after a hailstorm under PMFBY?"
+    id: "all",
+    title: "All Schemes",
+    icon: Layers,
+    color: "#10b981",
+    desc: "Search across all 5 official guidelines"
   },
   {
-    label: "☀️ PM-KUSUM 7.5 HP Subsidy",
-    text: "What percentage of subsidy is provided for a standalone solar agricultural pump under PM-KUSUM Component-B in general states?"
+    id: "kusum",
+    title: "PM-KUSUM",
+    icon: Sun,
+    color: "#f59e0b",
+    desc: "Solar pumps, Component A/B/C, 60% subsidy",
+    sample: "What percentage of subsidy is provided for a standalone solar agricultural pump under PM-KUSUM Component-B in general states?"
   },
   {
-    label: "👨‍🌾 PM-KISAN Exclusions",
-    text: "Are retired government employees eligible to receive PM-KISAN benefits?"
+    id: "pmfby",
+    title: "PMFBY Insurance",
+    icon: CloudRain,
+    color: "#60a5fa",
+    desc: "72h crop loss deadline, premium caps (1.5%, 2%, 5%)",
+    sample: "What is the mandatory time window to report crop loss after a hailstorm under PMFBY?"
   },
   {
-    label: "🧪 12 Soil Health Parameters",
-    text: "How many and which parameters are tested on a Soil Health Card?"
+    id: "kisan",
+    title: "PM-KISAN",
+    icon: DollarSign,
+    color: "#34d399",
+    desc: "Rs. 6000 DBT, exclusion rules & Group-D exceptions",
+    sample: "Are retired government employees eligible to receive PM-KISAN benefits?"
   },
   {
-    label: "🚁 Kisan Drone Grants",
-    text: "What subsidy or grant is provided for purchasing Kisan Drones for FPOs and small farmers?"
+    id: "smam",
+    title: "SMAM & Drones",
+    icon: Tractor,
+    color: "#a78bfa",
+    desc: "Tractor subsidies, Custom Hiring Centres, Kisan Drones",
+    sample: "What subsidy or grant is provided for purchasing Kisan Drones for FPOs and small farmers?"
   },
   {
-    label: "🚫 Surprise Out-of-Domain Test",
-    text: "What is the government subsidy for buying an electric helicopter for farm tourism?"
+    id: "soil",
+    title: "Soil Health Card",
+    icon: FlaskConical,
+    color: "#ec4899",
+    desc: "12 parameters, 3-year testing cycle, Village Labs",
+    sample: "How many and which parameters are tested on a Soil Health Card?"
   }
 ];
 
-export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey }) => {
+const JUDGES_WALKTHROUGH = [
+  {
+    step: "Step 1",
+    tag: "Strict Deadline",
+    title: "72-Hour Claim Rule",
+    query: "What is the mandatory time window for a farmer to report crop loss under PMFBY after a hailstorm?"
+  },
+  {
+    step: "Step 2",
+    tag: "Compound Subsidies",
+    title: "PM-KUSUM 60% Matrix",
+    query: "What percentage of subsidy is provided for a standalone solar agricultural pump under PM-KUSUM Component-B in general states?"
+  },
+  {
+    step: "Step 3",
+    tag: "Exclusion Exception",
+    title: "PM-KISAN Group D Rule",
+    query: "Are retired government employees eligible to receive PM-KISAN benefits?"
+  },
+  {
+    step: "Step 4",
+    tag: "Anti-Hallucination Refusal",
+    title: "Electric Helicopter Test",
+    query: "What is the government subsidy for buying an electric helicopter for farm tourism?"
+  }
+];
+
+export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey, onOpenKeyModal }) => {
   const [query, setQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +138,7 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey }) => {
         setSelectedSource(data.retrieved_sources[0]);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to reach AgriShield backend. Ensure backend is running.');
+      setError(err.message || 'Failed to reach AgriShield backend. Ensure backend is running at http://127.0.0.1:8000.');
     } finally {
       setLoading(false);
     }
@@ -79,29 +152,155 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey }) => {
 
   return (
     <div style={{ maxWidth: '1350px', margin: '0 auto', padding: '24px' }}>
-      {/* Search Bar & Prompt Pills */}
-      <div className="glass-panel" style={{ padding: '24px', marginBottom: '28px' }}>
-        <h2 style={{ fontSize: '1.25rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Search size={20} color="#10b981" />
-          Ask Indian Agricultural Policy Documents
-        </h2>
+      
+      {/* Missing API Key Warning & Quick Config Banner */}
+      {!apiKey && (
+        <div className="glass-panel" style={{
+          padding: '14px 20px',
+          marginBottom: '20px',
+          background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.05))',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Flame size={20} color="#f59e0b" className="animate-pulse" />
+            <div>
+              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fde68a' }}>
+                Groq API Key Not Configured in Browser
+              </span>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                You can add your free key in <code>backend/.env</code> or click below to enter it directly for sub-second Llama 3.3 inference.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenKeyModal}
+            className="btn-primary"
+            style={{ padding: '6px 14px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+          >
+            Enter Free Groq Key
+          </button>
+        </div>
+      )}
 
-        <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} style={{ display: 'flex', gap: '12px', marginBottom: '18px' }}>
+      {/* Judges Quick 60-Second Walkthrough Bar */}
+      <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} color="#34d399" />
+            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+              Judges 60-Second Pitch Walkthrough
+            </span>
+            <span className="badge-tag" style={{ color: '#34d399' }}>Instant Demo Mode</span>
+          </div>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Click each step in order to witness precision retrieval & anti-hallucination refusal:
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+          {JUDGES_WALKTHROUGH.map((step, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                setQuery(step.query);
+                handleSearch(step.query);
+              }}
+              className="glass-card-interactive"
+              style={{ padding: '10px 14px', textAlign: 'left' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#34d399' }}>
+                  {step.step}: {step.tag}
+                </span>
+                <ArrowRight size={13} color="#64748b" />
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f8fafc' }}>
+                {step.title}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Interactive Scheme Categories Tabs */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+            Explore by Policy Scheme Category:
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+            Clicking a category loads verified questions
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+          {SCHEME_CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <div
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  if (cat.sample) {
+                    setQuery(cat.sample);
+                    handleSearch(cat.sample);
+                  }
+                }}
+                className={`glass-card-interactive ${isSelected ? 'active' : ''}`}
+                style={{ padding: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}
+              >
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: `${cat.color}20`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: cat.color
+                }}>
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: isSelected ? '#a7f3d0' : '#fff' }}>
+                    {cat.title}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                    {cat.desc}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Search Bar */}
+      <div className="glass-panel" style={{ padding: '24px', marginBottom: '28px' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={18} color="#6ee7b7" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               id="rag-query-input"
               type="text"
-              placeholder="Ask about subsidies, crop insurance deadlines, eligibility, or soil health testing..."
+              placeholder="Ask about subsidies, claim hours, drone grants, or soil parameters..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '14px 18px',
-                background: 'rgba(0, 0, 0, 0.4)',
+                padding: '16px 18px 16px 46px',
+                background: 'rgba(0, 0, 0, 0.45)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)',
                 color: '#fff',
-                fontSize: '1rem',
+                fontSize: '1.02rem',
                 outline: 'none',
                 transition: 'all 0.2s',
               }}
@@ -114,12 +313,12 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey }) => {
             type="submit"
             disabled={loading || !query.trim()}
             className="btn-primary"
-            style={{ padding: '0 24px' }}
+            style={{ padding: '0 28px', fontSize: '1rem' }}
           >
             {loading ? (
               <>
-                <Zap size={18} className="animate-pulse" />
-                Retrieving & Reasoning...
+                <Zap size={18} className="animate-spin" />
+                Querying RAG...
               </>
             ) : (
               <>
@@ -129,29 +328,6 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey }) => {
             )}
           </button>
         </form>
-
-        {/* Preset Sample Prompts */}
-        <div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-            Curated Benchmark Queries (Click to test):
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {SAMPLE_QUERIES.map((sample, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  setQuery(sample.text);
-                  handleSearch(sample.text);
-                }}
-                className="btn-secondary"
-                style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-              >
-                {sample.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Error state */}
@@ -166,137 +342,165 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey }) => {
 
       {/* RAG Results Display */}
       {response && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, 1fr)', gap: '24px' }}>
-          {/* Main Answer Card */}
-          <div className="glass-panel animate-fade-in" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Header: Grounding Status & Latency HUD */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-              <div>
-                {response.grounded ? (
-                  <span className="badge-grounded">
-                    <CheckCircle2 size={15} />
-                    GROUNDED IN OFFICIAL POLICY
-                  </span>
-                ) : (
-                  <span className="badge-refusal">
-                    <AlertTriangle size={15} />
-                    OUT-OF-DOMAIN REFUSAL ("I DON'T KNOW")
-                  </span>
-                )}
-              </div>
-
-              {/* Latency Metrics */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={13} color="#34d399" />
-                  Total: <strong style={{ color: '#fff' }}>{response.total_latency_ms} ms</strong>
-                </span>
-                <span>•</span>
-                <span>Retrieval (BM25+Dense): <strong style={{ color: '#fff' }}>{response.retrieval_latency_ms} ms</strong></span>
-                <span>•</span>
-                <span>Groq Llama-3.3: <strong style={{ color: '#fff' }}>{response.generation_latency_ms} ms</strong></span>
-              </div>
+        <div>
+          {/* Real-time RAG Pipeline Progress Tracker */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, marginRight: '4px' }}>
+              Execution Trace:
+            </span>
+            <div className="pipeline-step active">
+              <Sparkles size={13} color="#34d399" />
+              <span>Query Normalizer & Acronym Expander</span>
             </div>
-
-            {/* Answer Text */}
-            <div style={{ color: 'var(--text-main)', fontSize: '0.98rem', lineHeight: '1.75' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', fontWeight: 600 }}>
-                Synthesized Grounded Answer:
-              </div>
-              <div style={{ whiteSpace: 'pre-wrap', background: 'rgba(0,0,0,0.25)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                {response.answer}
-              </div>
+            <span style={{ color: 'var(--text-dim)' }}>➔</span>
+            <div className="pipeline-step active">
+              <Cpu size={13} color="#34d399" />
+              <span>Hybrid BM25 + Cosine (MiniLM-L6)</span>
             </div>
-
-            {/* Citations Preview Banner */}
-            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(52, 211, 153, 0.2)', padding: '12px 16px', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6ee7b7', fontSize: '0.82rem', fontWeight: 600 }}>
-                <BookOpen size={16} />
-                <span>{response.retrieved_sources.length} Verified Document Chunks Retrieved via Hybrid Search</span>
-              </div>
-              <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                Click any source card on the right panel to inspect the verbatim policy text and mathematical rank score.
-              </p>
+            <span style={{ color: 'var(--text-dim)' }}>➔</span>
+            <div className="pipeline-step active">
+              <Layers size={13} color="#34d399" />
+              <span>RRF Top-4 Fusion ({response.retrieval_latency_ms}ms)</span>
+            </div>
+            <span style={{ color: 'var(--text-dim)' }}>➔</span>
+            <div className="pipeline-step active">
+              <ShieldCheck size={13} color="#34d399" />
+              <span>Groq Llama 3.3 70B Grounding Check ({response.generation_latency_ms}ms)</span>
             </div>
           </div>
 
-          {/* Source Citations Inspector Panel */}
-          <div className="glass-panel animate-fade-in" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BookOpen size={18} color="#10b981" />
-                Retrieved Context & Citations
-              </h3>
-              <span className="badge-tag">Top-4 Chunks (RRF)</span>
-            </div>
-
-            {/* Sources List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {response.retrieved_sources.map((item, idx) => {
-                const isSelected = selectedSource?.chunk.chunk_id === item.chunk.chunk_id;
-                return (
-                  <div
-                    key={item.chunk.chunk_id}
-                    onClick={() => setSelectedSource(item)}
-                    style={{
-                      padding: '14px',
-                      borderRadius: '10px',
-                      background: isSelected ? 'rgba(52, 211, 153, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                      border: `1px solid ${isSelected ? 'var(--emerald-500)' : 'var(--border-color)'}`,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f0fdf4' }}>
-                        Source [{idx + 1}]: {item.chunk.scheme.split('(')[0].trim()}
-                      </span>
-                      <span className="badge-tag" style={{ color: '#34d399', fontSize: '0.7rem' }}>
-                        RRF: {item.rrf_score}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                      Section: <strong style={{ color: '#a7f3d0' }}>{item.chunk.section}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                      <span>Dense Cosine: <strong style={{ color: '#93c5fd' }}>{item.vector_score}</strong></span>
-                      <span>BM25 Score: <strong style={{ color: '#fcd34d' }}>{item.bm25_score}</strong></span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Selected Chunk Verbatim Text Inspector */}
-            {selectedSource && (
-              <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '10px', padding: '16px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#34d399', textTransform: 'uppercase' }}>
-                    Verbatim Clause Passage ({selectedSource.chunk.chunk_id})
-                  </span>
-                  <button
-                    onClick={() => handleCopyCitation(selectedSource.chunk.content, selectedSource.chunk.chunk_id)}
-                    className="btn-secondary"
-                    style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                  >
-                    {copiedId === selectedSource.chunk.chunk_id ? (
-                      <>
-                        <Check size={12} color="#10b981" /> Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={12} /> Copy Snippet
-                      </>
-                    )}
-                  </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(0, 1fr)', gap: '24px' }}>
+            {/* Main Answer Card */}
+            <div className="glass-panel animate-fade-in" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Header: Grounding Status & Latency HUD */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                <div>
+                  {response.grounded ? (
+                    <span className="badge-grounded">
+                      <CheckCircle2 size={16} />
+                      GROUNDED IN OFFICIAL POLICY
+                    </span>
+                  ) : (
+                    <span className="badge-refusal">
+                      <AlertTriangle size={16} />
+                      OUT-OF-DOMAIN REFUSAL ("I DON'T KNOW")
+                    </span>
+                  )}
                 </div>
-                <div style={{ maxHeight: '220px', overflowY: 'auto', fontSize: '0.82rem', color: '#cbd5e1', whiteSpace: 'pre-wrap', lineHeight: '1.6', fontFamily: 'var(--font-mono)' }}>
-                  {selectedSource.chunk.content}
+
+                {/* Latency Metrics */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={13} color="#34d399" />
+                    Total Latency: <strong style={{ color: '#fff' }}>{response.total_latency_ms} ms</strong>
+                  </span>
+                  <span>•</span>
+                  <span>Retrieval: <strong style={{ color: '#fff' }}>{response.retrieval_latency_ms} ms</strong></span>
+                  <span>•</span>
+                  <span>Groq LLM: <strong style={{ color: '#fff' }}>{response.generation_latency_ms} ms</strong></span>
                 </div>
               </div>
-            )}
+
+              {/* Answer Text */}
+              <div style={{ color: 'var(--text-main)', fontSize: '0.98rem', lineHeight: '1.75' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', fontWeight: 600 }}>
+                  Synthesized Grounded Answer:
+                </div>
+                <div style={{ whiteSpace: 'pre-wrap', background: 'rgba(0,0,0,0.3)', padding: '22px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {response.answer}
+                </div>
+              </div>
+
+              {/* Citations Preview Banner */}
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(52, 211, 153, 0.25)', padding: '14px 18px', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6ee7b7', fontSize: '0.84rem', fontWeight: 700 }}>
+                  <BookOpen size={16} />
+                  <span>{response.retrieved_sources.length} Verified Document Chunks Retrieved via Hybrid Search</span>
+                </div>
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                  Click any source card on the right panel to inspect the verbatim policy text and mathematical rank score.
+                </p>
+              </div>
+            </div>
+
+            {/* Source Citations Inspector Panel */}
+            <div className="glass-panel animate-fade-in" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BookOpen size={18} color="#10b981" />
+                  Retrieved Context & Citations
+                </h3>
+                <span className="badge-tag">Top-4 Chunks (RRF)</span>
+              </div>
+
+              {/* Sources List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {response.retrieved_sources.map((item, idx) => {
+                  const isSelected = selectedSource?.chunk.chunk_id === item.chunk.chunk_id;
+                  return (
+                    <div
+                      key={item.chunk.chunk_id}
+                      onClick={() => setSelectedSource(item)}
+                      style={{
+                        padding: '14px',
+                        borderRadius: '10px',
+                        background: isSelected ? 'rgba(52, 211, 153, 0.14)' : 'rgba(255, 255, 255, 0.03)',
+                        border: `1px solid ${isSelected ? 'var(--emerald-400)' : 'var(--border-color)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f0fdf4' }}>
+                          Source [{idx + 1}]: {item.chunk.scheme.split('(')[0].trim()}
+                        </span>
+                        <span className="badge-tag" style={{ color: '#34d399', fontSize: '0.7rem' }}>
+                          RRF Rank: {item.rrf_score}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                        Section: <strong style={{ color: '#a7f3d0' }}>{item.chunk.section}</strong>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px', fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+                        <span>Dense Cosine: <strong style={{ color: '#93c5fd' }}>{item.vector_score}</strong></span>
+                        <span>BM25 Score: <strong style={{ color: '#fcd34d' }}>{item.bm25_score}</strong></span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Selected Chunk Verbatim Text Inspector */}
+              {selectedSource && (
+                <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.45)', borderRadius: '10px', padding: '16px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#34d399', textTransform: 'uppercase' }}>
+                      Verbatim Clause Passage ({selectedSource.chunk.chunk_id})
+                    </span>
+                    <button
+                      onClick={() => handleCopyCitation(selectedSource.chunk.content, selectedSource.chunk.chunk_id)}
+                      className="btn-secondary"
+                      style={{ padding: '4px 8px', fontSize: '0.72rem' }}
+                    >
+                      {copiedId === selectedSource.chunk.chunk_id ? (
+                        <>
+                          <Check size={12} color="#10b981" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={12} /> Copy Snippet
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div style={{ maxHeight: '220px', overflowY: 'auto', fontSize: '0.82rem', color: '#cbd5e1', whiteSpace: 'pre-wrap', lineHeight: '1.6', fontFamily: 'var(--font-mono)' }}>
+                    {selectedSource.chunk.content}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
