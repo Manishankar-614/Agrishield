@@ -4,9 +4,16 @@ from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import sys
 import pypdf
 import docx
 import openpyxl
+
+# Ensure backend directory is in sys.path regardless of execution root
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
 from rag_engine import AgriRAGEngine
 
 app = FastAPI(
@@ -24,8 +31,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize RAG Engine
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+# Initialize RAG Engine with robust data path
+DATA_DIR = os.path.join(BACKEND_DIR, "..", "data")
+if not os.path.exists(DATA_DIR):
+    DATA_DIR = os.path.join(BACKEND_DIR, "data")
+if not os.path.exists(DATA_DIR):
+    DATA_DIR = os.path.abspath("data")
+
 print(f"Loading documents from {DATA_DIR}...")
 rag_engine = AgriRAGEngine(data_dir=DATA_DIR)
 
