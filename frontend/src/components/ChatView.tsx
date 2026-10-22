@@ -14,7 +14,9 @@ import {
   RotateCcw,
   Sparkles,
   Bot,
-  User
+  User,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import type { QueryResponse } from '../types';
 
@@ -49,12 +51,105 @@ const SAMPLE_QUESTIONS = [
   }
 ];
 
+// Natural formatting helper that eliminates raw markdown symbols and presents clean, readable typography
+const renderNaturalContent = (rawText: string) => {
+  // Strip out any markdown symbols like #, ##, ###, **, *, `
+  const cleaned = rawText
+    .replace(/^#+\s*/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`(.*?)`/g, '$1');
+
+  const lines = cleaned.split('\n');
+  const blocks: React.ReactNode[] = [];
+  let currentList: string[] = [];
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      blocks.push(
+        <ul
+          key={`list-${blocks.length}`}
+          style={{
+            margin: '8px 0 12px 0',
+            paddingLeft: 0,
+            listStyleType: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}
+        >
+          {currentList.map((item, idx) => (
+            <li
+              key={idx}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+                lineHeight: '1.6',
+                color: 'var(--text-main)',
+                fontSize: '0.92rem'
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: 'var(--forest-600)',
+                  marginTop: '8px',
+                  flexShrink: 0
+                }}
+              />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+      currentList.push(trimmed.substring(2));
+    } else if (/^\d+[\.\)]\s+/.test(trimmed)) {
+      currentList.push(trimmed.replace(/^\d+[\.\)]\s+/, ''));
+    } else {
+      flushList();
+      blocks.push(
+        <p
+          key={`p-${idx}`}
+          style={{
+            margin: '0 0 10px 0',
+            lineHeight: '1.7',
+            color: 'var(--text-main)',
+            fontSize: '0.93rem'
+          }}
+        >
+          {trimmed}
+        </p>
+      );
+    }
+  });
+
+  flushList();
+  return <div>{blocks}</div>;
+};
+
 export const ChatView: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedSources, setExpandedSources] = useState<{ [msgId: string]: boolean }>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -64,6 +159,34 @@ export const ChatView: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleSpeak = (text: string, id: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    if (speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanForSpeech = text.replace(/\[Source:.*?\]/g, '').replace(/[-•*#]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanForSpeech);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleSend = async (queryText?: string) => {
     const q = (queryText || input).trim();
@@ -259,7 +382,7 @@ export const ChatView: React.FC = () => {
                 </div>
               ) : (
                 <div className="chat-bubble-assistant animate-fade-in">
-                  {/* Assistant Header Badge & Latency */}
+                  {/* Assistant Header Badge & Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: 'var(--forest-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--forest-800)' }}>
@@ -281,16 +404,59 @@ export const ChatView: React.FC = () => {
                       )}
                     </div>
 
-                    {msg.responseMeta && (
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Clock size={12} /> {msg.responseMeta.total_latency_ms} ms
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {/* Voice Listen Button */}
+                      <button
+                        onClick={() => handleSpeak(msg.text, msg.id)}
+                        title={speakingId === msg.id ? "Stop reading" : "Read aloud in natural voice"}
+                        style={{
+                          background: speakingId === msg.id ? 'var(--forest-100)' : 'transparent',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '3px 7px',
+                          cursor: 'pointer',
+                          color: speakingId === msg.id ? 'var(--forest-800)' : 'var(--text-dim)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: speakingId === msg.id ? 700 : 500
+                        }}
+                      >
+                        {speakingId === msg.id ? <VolumeX size={13} color="var(--forest-800)" /> : <Volume2 size={13} />}
+                        <span>{speakingId === msg.id ? "Stop" : "Listen"}</span>
+                      </button>
+
+                      {/* Copy clean text */}
+                      <button
+                        onClick={() => handleCopy(msg.text.replace(/[*#]/g, ''), msg.id)}
+                        title="Copy answer"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--text-dim)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '3px 6px',
+                          fontSize: '0.72rem'
+                        }}
+                      >
+                        {copiedId === msg.id ? <Check size={12} color="var(--forest-800)" /> : <Copy size={12} />}
+                      </button>
+
+                      {msg.responseMeta && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} /> {msg.responseMeta.total_latency_ms} ms
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Main Synthesized Text */}
-                  <div style={{ fontSize: '0.92rem', color: 'var(--text-main)', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
-                    {msg.text}
+                  {/* Main Natural Synthesized Text */}
+                  <div style={{ margin: '8px 0 4px 0' }}>
+                    {renderNaturalContent(msg.text)}
                   </div>
 
                   {/* Expandable Citations Drawer */}

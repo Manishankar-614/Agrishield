@@ -305,26 +305,30 @@ class AgriRAGEngine:
         api_key = groq_api_key or os.getenv("GROQ_API_KEY")
         
         system_prompt = (
-            "You are AgriShield, an authoritative, anti-hallucinatory AI Agricultural Scheme & Subsidy Navigator.\n"
-            "Your job is to answer the user's question using EXCLUSIVELY the provided official government document excerpts.\n\n"
-            "MANDATORY GROUNDING RULES:\n"
+            "You are AgriShield, a warm, polite, and authoritative AI Agricultural Advisor guiding farmers, officers, and citizens on Indian government schemes.\n"
+            "Your job is to answer the user's question naturally and conversationally while using EXCLUSIVELY the provided official government document excerpts.\n\n"
+            "TONE AND FORMATTING REQUIREMENTS (VERY IMPORTANT):\n"
+            "- Speak naturally, politely, and clearly, as if you are speaking directly to a farmer or agricultural field officer.\n"
+            "- AVOID RAW MARKDOWN SYMBOLS: Do NOT use markdown heading hashes (#, ##, ###) or asterisks (**text** or *text*). Write in clean, beautiful, natural prose.\n"
+            "- For separate points, use simple clean dashes (- ) or numbered steps (1., 2.), never asterisks.\n"
+            "- Mention scheme names and sections smoothly in your sentences, such as: 'According to the PM-KUSUM guidelines...' or cite at the end.\n\n"
+            "MANDATORY FACTUAL GROUNDING RULES:\n"
             "1. Answer strictly based on the context excerpts provided. Never extrapolate, fabricate, or assume percentages, financial amounts, or deadlines.\n"
             "2. If the user asks something that is NOT addressed in the excerpts, or if the provided excerpts do not have sufficient information, YOU MUST STATE: "
             "'I cannot find this information in the official agricultural documents provided.' Do NOT try to give outside general advice.\n"
-            "3. Cite your sources accurately in the format: [Source: Scheme Name - Section].\n"
-            "4. Structure the response clearly with bullet points, bolding key eligibility criteria, percentage subsidies, and mandatory timeframes.\n"
+            "3. State exact numbers, percentages, and deadlines truthfully from the excerpts.\n"
         )
         
-        user_prompt = f"Official Document Context Excerpts:\n{full_context}\n\nUser Question:\n{user_query}\n\nGround Answer with Citations:"
+        user_prompt = f"Official Document Context Excerpts:\n{full_context}\n\nUser Question:\n{user_query}\n\nAnswer in natural, conversational, plain language without markdown symbols (* or #):"
         
         gen_start = time.time()
         
         if not api_key:
             # Fallback if no API key is provided yet
             answer = (
-                "⚠️ **Groq API Key Not Configured**: Please provide your free GROQ_API_KEY in the header or backend `.env` file.\n\n"
-                f"**Retrieved Context Preview ({len(retrieved)} matching official excerpts found):**\n"
-                + "\n\n".join([f"• **{r['chunk']['scheme']} ({r['chunk']['section']})**: {r['chunk']['content'][:180]}..." for r in retrieved])
+                "Groq API Key Not Configured. Please provide your free GROQ_API_KEY in the backend .env file.\n\n"
+                f"Retrieved Context Preview ({len(retrieved)} matching official excerpts found):\n"
+                + "\n\n".join([f"- {r['chunk']['scheme']} ({r['chunk']['section']}): {r['chunk']['content'][:180]}..." for r in retrieved])
             )
             grounded = is_relevant
         else:
@@ -350,7 +354,7 @@ class AgriRAGEngine:
                     continue
                     
             if completion:
-                answer = completion.choices[0].message.content
+                raw_answer = completion.choices[0].message.content
                 
                 # Check if model gave refusal response
                 refusal_phrases = [
@@ -361,8 +365,17 @@ class AgriRAGEngine:
                     "no information is provided",
                     "i do not have this information"
                 ]
-                has_refusal = any(p in answer.lower() for p in refusal_phrases)
+                has_refusal = any(p in raw_answer.lower() for p in refusal_phrases)
                 grounded = not has_refusal and is_relevant
+                
+                # Post-process to remove any remaining markdown symbols like # or ** or *
+                cleaned = re.sub(r'^[#]+\s*', '', raw_answer, flags=re.MULTILINE)
+                cleaned = re.sub(r'\*\*(.*?)\*\*', r'\1', cleaned)
+                cleaned = re.sub(r'(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)', r'\1', cleaned)
+                cleaned = re.sub(r'^\s*[\*•]\s+', '- ', cleaned, flags=re.MULTILINE)
+                cleaned = re.sub(r'`(.*?)`', r'\1', cleaned)
+                cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+                answer = cleaned.strip()
             else:
                 answer = f"Error communicating with Groq API: {str(last_err)}"
                 grounded = False
