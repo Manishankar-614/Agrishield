@@ -1,25 +1,21 @@
 import React from 'react';
-import { Shield, Sparkles, Key, FileCheck, Layers, AlertCircle } from 'lucide-react';
+import { Shield, Sparkles, FileCheck, Layers, AlertCircle, Cpu, Zap, BookCheck } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  apiKey: string;
-  onOpenKeyModal: () => void;
   backendHealthy: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
-  apiKey,
-  onOpenKeyModal,
   backendHealthy,
 }) => {
   return (
     <header style={{
       borderBottom: '1px solid var(--border-color)',
-      background: 'rgba(5, 11, 10, 0.88)',
+      background: 'rgba(5, 11, 10, 0.92)',
       backdropFilter: 'blur(20px)',
       position: 'sticky',
       top: 0,
@@ -59,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-              Anti-Hallucinatory Scheme Navigator • GAT Hack Hour 2026
+              Anti-Hallucinatory Scheme & Subsidy Navigator • Global Academy of Technology
             </p>
           </div>
         </div>
@@ -104,32 +100,59 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* System Status & Key Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+        {/* Live System Engine Status Chips */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 12px',
+            borderRadius: 'var(--radius-full)',
+            background: backendHealthy ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            border: `1px solid ${backendHealthy ? 'rgba(52, 211, 153, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+            fontSize: '0.76rem',
+            color: backendHealthy ? '#a7f3d0' : '#fca5a5'
+          }}>
             <span style={{
-              width: '8px',
-              height: '8px',
+              width: '7px',
+              height: '7px',
               borderRadius: '50%',
               background: backendHealthy ? '#10b981' : '#ef4444',
               boxShadow: backendHealthy ? '0 0 8px #10b981' : '0 0 8px #ef4444'
             }} />
-            <span>{backendHealthy ? 'FastAPI + BM25 Ready' : 'Connecting Backend...'}</span>
+            <Zap size={13} color={backendHealthy ? '#34d399' : '#ef4444'} />
+            <span>{backendHealthy ? 'Groq + FastAPI Online' : 'Connecting Engine...'}</span>
           </div>
 
-          <button
-            id="btn-config-key"
-            onClick={onOpenKeyModal}
-            className="btn-secondary"
-            style={{
-              borderColor: apiKey ? 'rgba(52, 211, 153, 0.4)' : 'rgba(251, 191, 36, 0.5)',
-              color: apiKey ? '#a7f3d0' : '#fde68a',
-              background: apiKey ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)'
-            }}
-          >
-            <Key size={15} />
-            {apiKey ? 'Groq Key Active' : 'Configure Groq Key'}
-          </button>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 10px',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid var(--border-color)',
+            fontSize: '0.76rem',
+            color: 'var(--text-muted)'
+          }}>
+            <Cpu size={13} color="#60a5fa" />
+            <span>BM25 + MiniLM RRF</span>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 10px',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid var(--border-color)',
+            fontSize: '0.76rem',
+            color: 'var(--text-muted)'
+          }}>
+            <BookCheck size={13} color="#f59e0b" />
+            <span>26 Indexed Chunks</span>
+          </div>
         </div>
       </div>
     </header>

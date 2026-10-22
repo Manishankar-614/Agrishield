@@ -246,17 +246,28 @@ class AgriRAGEngine:
             )
             grounded = is_relevant
         else:
-            try:
-                client = Groq(api_key=api_key)
-                completion = client.chat.completions.create(
-                    model=GROQ_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.1,  # Low temperature for strict factual adherence
-                    max_tokens=800
-                )
+            client = Groq(api_key=api_key)
+            candidate_models = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b", GROQ_MODEL]
+            completion = None
+            last_err = None
+            
+            for mod in candidate_models:
+                try:
+                    completion = client.chat.completions.create(
+                        model=mod,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.1,  # Low temperature for strict factual adherence
+                        max_tokens=800
+                    )
+                    break
+                except Exception as e:
+                    last_err = e
+                    continue
+                    
+            if completion:
                 answer = completion.choices[0].message.content
                 
                 # Check if model gave refusal response
@@ -265,13 +276,13 @@ class AgriRAGEngine:
                     "not found in the provided",
                     "does not contain",
                     "not mentioned in the official",
-                    "no information is provided"
+                    "no information is provided",
+                    "i do not have this information"
                 ]
                 has_refusal = any(p in answer.lower() for p in refusal_phrases)
                 grounded = not has_refusal and is_relevant
-                
-            except Exception as e:
-                answer = f"Error communicating with Groq API: {str(e)}"
+            else:
+                answer = f"Error communicating with Groq API: {str(last_err)}"
                 grounded = False
                 
         generation_latency = time.time() - gen_start

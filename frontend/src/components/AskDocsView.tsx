@@ -18,15 +18,9 @@ import {
   DollarSign,
   Tractor,
   FlaskConical,
-  Flame,
   ArrowRight
 } from 'lucide-react';
 import type { QueryResponse, RetrievedSource } from '../types';
-
-interface AskDocsViewProps {
-  apiKey: string;
-  onOpenKeyModal: () => void;
-}
 
 const SCHEME_CATEGORIES = [
   {
@@ -105,7 +99,7 @@ const JUDGES_WALKTHROUGH = [
   }
 ];
 
-export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey, onOpenKeyModal }) => {
+export const AskDocsView: React.FC = () => {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(false);
@@ -125,7 +119,7 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey, onOpenKeyModal
       const res = await fetch('http://127.0.0.1:8000/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q, api_key: apiKey || undefined })
+        body: JSON.stringify({ query: q })
       });
 
       if (!res.ok) {
@@ -153,40 +147,6 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey, onOpenKeyModal
   return (
     <div style={{ maxWidth: '1350px', margin: '0 auto', padding: '24px' }}>
       
-      {/* Missing API Key Warning & Quick Config Banner */}
-      {!apiKey && (
-        <div className="glass-panel" style={{
-          padding: '14px 20px',
-          marginBottom: '20px',
-          background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.05))',
-          border: '1px solid rgba(245, 158, 11, 0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Flame size={20} color="#f59e0b" className="animate-pulse" />
-            <div>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fde68a' }}>
-                Groq API Key Not Configured in Browser
-              </span>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-                You can add your free key in <code>backend/.env</code> or click below to enter it directly for sub-second Llama 3.3 inference.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onOpenKeyModal}
-            className="btn-primary"
-            style={{ padding: '6px 14px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
-          >
-            Enter Free Groq Key
-          </button>
-        </div>
-      )}
-
       {/* Judges Quick 60-Second Walkthrough Bar */}
       <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
@@ -365,7 +325,7 @@ export const AskDocsView: React.FC<AskDocsViewProps> = ({ apiKey, onOpenKeyModal
             <span style={{ color: 'var(--text-dim)' }}>➔</span>
             <div className="pipeline-step active">
               <ShieldCheck size={13} color="#34d399" />
-              <span>Groq Llama 3.3 70B Grounding Check ({response.generation_latency_ms}ms)</span>
+              <span>Groq Grounding Verification ({response.generation_latency_ms}ms)</span>
             </div>
           </div>
 
