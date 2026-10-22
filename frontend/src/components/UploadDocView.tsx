@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FilePlus, CheckCircle2, AlertTriangle, RefreshCw, XCircle } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 const VALID_AGRI_SAMPLE = {
   title: "National Mission on Natural Farming (NMNF) 2026 Guidelines",
@@ -40,7 +41,7 @@ export const UploadDocView: React.FC = () => {
     setRejectionError(null);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/documents', {
+      const res = await fetch(`${API_BASE_URL}/api/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content })

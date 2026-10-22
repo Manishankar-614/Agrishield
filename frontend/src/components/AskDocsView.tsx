@@ -11,6 +11,7 @@ import {
   Check
 } from 'lucide-react';
 import type { QueryResponse, RetrievedSource } from '../types';
+import { API_BASE_URL } from '../apiConfig';
 
 const SAMPLE_QUESTIONS = [
   {
@@ -51,7 +52,7 @@ export const AskDocsView: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/query', {
+      const res = await fetch(`${API_BASE_URL}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q })

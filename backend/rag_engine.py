@@ -60,7 +60,10 @@ class AgriRAGEngine:
         self.embeddings: np.ndarray = None
         
         print("Initializing SentenceTransformer embedding model...")
-        self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        try:
+            self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME, local_files_only=True)
+        except Exception:
+            self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
         
         # Load and index documents
         self.load_documents()

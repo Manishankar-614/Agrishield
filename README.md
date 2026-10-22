@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Python%203.13-009688)](https://fastapi.tiangolo.com/)
 [![Groq](https://img.shields.io/badge/Inference-Groq%20Llama%203.3%2070B-f55036)](https://groq.com/)
 [![Hybrid RAG](https://img.shields.io/badge/Retrieval-BM25%20%2B%20MiniLM%20RRF-4caf50)](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
-[![Netlify Ready](https://img.shields.io/badge/Deploy-Netlify%20Ready-00c7b7)](https://www.netlify.com/)
+[![Vercel Ready](https://img.shields.io/badge/Deploy-Vercel%20Ready-black?logo=vercel)](https://vercel.com/)
 
 ---
 
@@ -127,51 +127,55 @@ These records highlight cases where ground truth is present in the corpus, but s
 
 ---
 
-## 5. Deployment Guide (Netlify & Cloud)
+## 5. Deployment Guide (Vercel & Render)
 
-### Option A: Deploy Frontend to Netlify (1-Click)
+### Option A: Deploy Frontend to Vercel (Recommended)
 1. Fork or push this repository to your GitHub account.
-2. Log in to [Netlify](https://app.netlify.com/) and click **"Add new site" -> "Import an existing project"**.
-3. Select your **`Agrishield`** repository.
-4. Netlify automatically detects [`netlify.toml`](./netlify.toml):
-   - **Base directory:** `frontend`
-   - **Build command:** `npm run build`
-   - **Publish directory:** `frontend/dist`
-5. In **Site Configuration -> Environment variables**, add:
+2. Log in to [Vercel](https://vercel.com/) and click **"Add New..." -> "Project"**.
+3. Import your **`Agrishield`** repository.
+4. Configure Project Settings:
+   - **Framework Preset:** `Vite`
+   - **Root Directory:** `frontend` (or leave default `.` as the root [`vercel.json`](./vercel.json) automatically directs the build to `frontend/dist`)
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+5. In **Environment Variables**, add:
    ```env
-   VITE_API_BASE_URL=https://your-backend-service.onrender.com
+   VITE_API_BASE_URL=https://your-agrishield-backend.onrender.com
    ```
-6. Click **Deploy Site**.
+6. Click **Deploy**. Vercel will build and assign an SSL-enabled production URL in ~30 seconds.
 
 ---
 
-### Option B: Free Backend Hosting (Render.com)
+### Option B: Deploy Backend to Render (Render.com)
 1. Log in to [Render.com](https://render.com) and create a **New Web Service**.
 2. Connect your GitHub repository:
-   - **Root Directory:** `backend`
+   - **Name:** `agrishield-backend`
+   - **Root Directory:** *(leave blank / root `.`)*
    - **Runtime:** `Python 3`
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   > **Note on Port Binding:** Render assigns a dynamic port via the `$PORT` environment variable. Specifying `--host 0.0.0.0 --port $PORT` ensures Uvicorn binds to all interfaces on the designated port, preventing port scan timeouts.
 3. Under **Environment Variables**, add:
    ```env
-   GROQ_API_KEY=your_groq_api_key_here
+   GROQ_API_KEY=gsk_your_groq_api_key_here
+   PYTHON_VERSION=3.11.9
+   PYTHONUNBUFFERED=1
    ```
-4. Copy your Render service URL (e.g., `https://agrishield-backend.onrender.com`) and paste it into Netlify's `VITE_API_BASE_URL`.
+4. Click **Create Web Service**. Once deployed, copy your Render service URL (e.g. `https://agrishield-backend.onrender.com`) and add it to your Vercel project's `VITE_API_BASE_URL`.
 
 ---
 
-### Option C: Live Hackathon Demo (Netlify + Localtunnel)
-If presenting live at the hackathon and you want Netlify to talk directly to your running local backend without cloud delays:
+### Option C: Live Hackathon Demo (Vercel + Localtunnel)
+If presenting live at the hackathon and you want your Vercel frontend to query your local GPU/laptop backend:
 1. Run your local backend:
    ```bash
-   cd backend
-   python -m uvicorn main:app --host 127.0.0.1 --port 8000
+   python main.py
    ```
-2. In a second terminal, open a public tunnel:
+2. In a second terminal, expose port 8000:
    ```bash
    npx localtunnel --port 8000
    ```
-3. Copy the generated URL (`https://xyz.loca.lt`) and set it as `VITE_API_BASE_URL` in Netlify!
+3. Copy the generated URL (`https://xyz.loca.lt`) and set it as `VITE_API_BASE_URL` in Vercel.
 
 ---
 
@@ -222,7 +226,8 @@ Open **`http://localhost:5173`** in your browser to experience AgriShield.
 │   ├── package.json
 │   └── vite.config.ts
 ├── data/                    # Official Government Policy Guidelines (Corpus)
-├── netlify.toml             # Production Netlify deployment configuration
+├── vercel.json              # Vercel deployment configuration
+├── render.yaml              # Render deployment configuration
 ├── TEST_SHEET.md            # Detailed Evaluator Test Matrix & Failure Analysis
 └── README.md                # Project documentation
 ```

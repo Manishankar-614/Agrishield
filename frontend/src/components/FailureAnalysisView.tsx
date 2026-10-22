@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Bug, CheckCircle, Cpu, Zap, GitBranch, ShieldAlert } from 'lucide-react';
 import type { FailureCase } from '../types';
+import { API_BASE_URL } from '../apiConfig';
 
 export const FailureAnalysisView: React.FC = () => {
   const [failures, setFailures] = useState<FailureCase[]>([]);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/benchmark')
+    fetch(`${API_BASE_URL}/api/benchmark`)
       .then(res => res.json())
       .then(data => {
         if (data.failure_analyses) {

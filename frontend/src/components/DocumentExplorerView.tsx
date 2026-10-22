@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
 import type { DocumentSummary } from '../types';
+import { API_BASE_URL } from '../apiConfig';
 
 export const DocumentExplorerView: React.FC = () => {
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<DocumentSummary | null>(null);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/documents')
+    fetch(`${API_BASE_URL}/api/documents`)
       .then(res => res.json())
       .then(data => {
         if (data.documents) {
