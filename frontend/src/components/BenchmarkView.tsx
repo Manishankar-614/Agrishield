@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileCheck, Play, CheckCircle2, XCircle, RefreshCw, Award } from 'lucide-react';
 import type { BenchmarkQuestion, QueryResponse } from '../types';
+import { API_BASE_URL } from '../apiConfig';
 
 export const BenchmarkView: React.FC = () => {
   const [benchmarks, setBenchmarks] = useState<BenchmarkQuestion[]>([]);
@@ -8,7 +9,7 @@ export const BenchmarkView: React.FC = () => {
   const [overallRunning, setOverallRunning] = useState(false);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/benchmark')
+    fetch(`${API_BASE_URL}/api/benchmark`)
       .then(res => res.json())
       .then(data => {
         if (data.benchmark_questions) {
@@ -25,7 +26,7 @@ export const BenchmarkView: React.FC = () => {
     }));
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/query', {
+      const res = await fetch(`${API_BASE_URL}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: test.question })

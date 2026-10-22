@@ -16,6 +16,8 @@ import {
   Sprout
 } from 'lucide-react';
 
+import { API_BASE_URL } from '../apiConfig';
+
 interface DashboardViewProps {
   onNavigate: (tab: 'dashboard' | 'ask' | 'docs' | 'benchmark') => void;
 }
@@ -29,7 +31,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   });
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/stats')
+    fetch(`${API_BASE_URL}/api/stats`)
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(err => console.error('Error fetching stats:', err));

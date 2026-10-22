@@ -4,6 +4,7 @@ import { DashboardView } from './components/DashboardView';
 import { ChatView } from './components/ChatView';
 import { KnowledgeBaseView } from './components/KnowledgeBaseView';
 import { BenchmarkView } from './components/BenchmarkView';
+import { API_BASE_URL } from './apiConfig';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ask' | 'docs' | 'benchmark'>('dashboard');
@@ -12,7 +13,7 @@ export function App() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/health');
+        const res = await fetch(`${API_BASE_URL}/api/health`);
         if (res.ok) {
           setBackendHealthy(true);
         } else {

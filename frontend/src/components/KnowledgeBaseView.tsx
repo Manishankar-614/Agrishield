@@ -12,6 +12,7 @@ import {
   FileCode
 } from 'lucide-react';
 import type { DocumentSummary } from '../types';
+import { API_BASE_URL } from '../apiConfig';
 
 const VALID_SAMPLE = {
   title: "National Mission on Natural Farming (NMNF) 2026 Guidelines",
@@ -50,7 +51,7 @@ export const KnowledgeBaseView: React.FC = () => {
   const [rejectionError, setRejectionError] = useState<string | null>(null);
 
   const fetchDocuments = () => {
-    fetch('http://127.0.0.1:8000/api/documents')
+    fetch(`${API_BASE_URL}/api/documents`)
       .then(res => res.json())
       .then(data => {
         if (data.documents) {
@@ -82,7 +83,7 @@ export const KnowledgeBaseView: React.FC = () => {
     }
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/upload-file', {
+      const res = await fetch(`${API_BASE_URL}/api/upload-file`, {
         method: 'POST',
         body: formData
       });
@@ -112,7 +113,7 @@ export const KnowledgeBaseView: React.FC = () => {
     setRejectionError(null);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/documents', {
+      const res = await fetch(`${API_BASE_URL}/api/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: textTitle, content: textContent })
