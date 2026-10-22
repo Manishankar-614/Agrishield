@@ -4,6 +4,7 @@ export interface ChunkMetadata {
   scheme: string;
   section: string;
   content: string;
+  source_url?: string;
 }
 
 export interface RetrievedSource {

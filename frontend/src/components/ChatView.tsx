@@ -16,7 +16,8 @@ import {
   Bot,
   User,
   Volume2,
-  VolumeX
+  VolumeX,
+  ExternalLink
 } from 'lucide-react';
 import type { QueryResponse } from '../types';
 
@@ -459,7 +460,7 @@ export const ChatView: React.FC = () => {
                     {renderNaturalContent(msg.text)}
                   </div>
 
-                  {/* Expandable Citations Drawer */}
+                  {/* Expandable Citations Drawer - Top 3 Verified Sources with Official Links */}
                   {msg.responseMeta && msg.responseMeta.retrieved_sources && msg.responseMeta.retrieved_sources.length > 0 && (
                     <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
                       <button
@@ -478,13 +479,13 @@ export const ChatView: React.FC = () => {
                         }}
                       >
                         <BookOpen size={14} />
-                        <span>{msg.responseMeta.retrieved_sources.length} Verified Sources Cited</span>
+                        <span>{Math.min(3, msg.responseMeta.retrieved_sources.length)} Top Verified Sources Cited</span>
                         {expandedSources[msg.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
 
                       {expandedSources[msg.id] && (
                         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {msg.responseMeta.retrieved_sources.map((item, i) => (
+                          {msg.responseMeta.retrieved_sources.slice(0, 3).map((item, i) => (
                             <div
                               key={i}
                               style={{
@@ -495,16 +496,44 @@ export const ChatView: React.FC = () => {
                                 fontSize: '0.78rem'
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                                 <span style={{ fontWeight: 700, color: 'var(--forest-900)' }}>
                                   [{i + 1}] {item.chunk.scheme.split('(')[0].trim()} — {item.chunk.section}
                                 </span>
-                                <button
-                                  onClick={() => handleCopy(item.chunk.content, `${msg.id}_${i}`)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem' }}
-                                >
-                                  {copiedId === `${msg.id}_${i}` ? <Check size={11} color="var(--forest-800)" /> : <Copy size={11} />}
-                                </button>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  {item.chunk.source_url && (
+                                    <a
+                                      href={item.chunk.source_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title="Open official scheme portal"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        color: 'var(--forest-800)',
+                                        textDecoration: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.72rem',
+                                        background: 'var(--forest-100)',
+                                        border: '1px solid var(--forest-200)',
+                                        padding: '2px 8px',
+                                        borderRadius: '4px'
+                                      }}
+                                    >
+                                      <span>Official Portal</span>
+                                      <ExternalLink size={11} />
+                                    </a>
+                                  )}
+                                  <button
+                                    onClick={() => handleCopy(item.chunk.content, `${msg.id}_${i}`)}
+                                    title="Copy excerpt"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem' }}
+                                  >
+                                    {copiedId === `${msg.id}_${i}` ? <Check size={11} color="var(--forest-800)" /> : <Copy size={11} />}
+                                  </button>
+                                </div>
                               </div>
                               <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.74rem', whiteSpace: 'pre-wrap', lineHeight: '1.45' }}>
                                 {item.chunk.content.slice(0, 260)}...

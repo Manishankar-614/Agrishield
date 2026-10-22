@@ -17,6 +17,22 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
+def resolve_source_url(doc_name: str, scheme: str) -> str:
+    combined = f"{doc_name} {scheme}".lower()
+    if "kusum" in combined or "solar" in combined:
+        return "https://pmkusum.mnre.gov.in/"
+    if "pmfby" in combined or "fasal bima" in combined or "crop insurance" in combined:
+        return "https://pmfby.gov.in/"
+    if "pm_kisan" in combined or "pm-kisan" in combined or "kisan samman" in combined:
+        return "https://pmkisan.gov.in/"
+    if "drone" in combined or "smam" in combined or "mechanization" in combined:
+        return "https://agrimachinery.nic.in/"
+    if "soil" in combined:
+        return "https://soilhealth.dac.gov.in/"
+    if "natural" in combined or "nmnf" in combined:
+        return "https://naturalfarming.dac.gov.in/"
+    return "https://agricoop.nic.in/"
+
 class AgriChunk:
     def __init__(self, chunk_id: str, doc_name: str, scheme: str, section: str, content: str):
         self.chunk_id = chunk_id
@@ -31,7 +47,8 @@ class AgriChunk:
             "doc_name": self.doc_name,
             "scheme": self.scheme,
             "section": self.section,
-            "content": self.content
+            "content": self.content,
+            "source_url": resolve_source_url(self.doc_name, self.scheme)
         }
 
 class AgriRAGEngine:
@@ -282,8 +299,8 @@ class AgriRAGEngine:
     def query(self, user_query: str, groq_api_key: str = None) -> Dict[str, Any]:
         start_time = time.time()
         
-        # Retrieve top chunks
-        retrieved = self.retrieve(user_query, top_k=4)
+        # Retrieve top 3 chunks (showing up to 3 top sources)
+        retrieved = self.retrieve(user_query, top_k=3)
         retrieval_latency = time.time() - start_time
         
         # Check relevance threshold (Anti-hallucination safeguard)
@@ -390,5 +407,5 @@ class AgriRAGEngine:
             "retrieval_latency_ms": round(retrieval_latency * 1000, 1),
             "generation_latency_ms": round(generation_latency * 1000, 1),
             "total_latency_ms": round(total_latency * 1000, 1),
-            "retrieved_sources": retrieved
+            "retrieved_sources": retrieved[:3]
         }

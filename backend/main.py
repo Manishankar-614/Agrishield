@@ -94,19 +94,30 @@ BENCHMARK_TESTS = [
 FAILURE_CASES = [
     {
         "case_id": "fail_01",
-        "title": "Lexical Acronym Ambiguity without BM25 Rewriting",
-        "query_example": "subsidy for CHC and FMB",
-        "failure_mode": "Pure dense vector embeddings sometimes confuse 'CHC' (Custom Hiring Centre) with Community Health Centres, yielding low relevance chunks.",
-        "cause": "Polysemous acronyms in generic pre-trained embedding models without domain fine-tuning.",
-        "mitigation_implemented": "Query expansion dictionary + BM25 keyword boosting ensures 'Custom Hiring Centre' and 'Sub-Mission on Agricultural Mechanization' are prioritized."
+        "title": "Geographic Subsidy Boundary Hallucination (PM-KUSUM Component-B)",
+        "query_example": "Can I get a 90% subsidy under PM-KUSUM for installing a solar pump on my 5-acre farm in Haryana?",
+        "ground_truth": "Under PM-KUSUM Component-B, general states like Haryana are strictly capped at 60% total subsidy (30% Central CFA + 30% State). The 90% subsidy rate is legally restricted to North-Eastern States, Hilly States (HP, Uttarakhand, J&K), and Island territories.",
+        "failure_mode": "Standard LLMs / naive RAG frequently hallucinate that any farmer can receive up to 90% subsidy, ignoring the state classification constraint.",
+        "cause": "Cross-clause context bleeding: The chunk contains both 60% (general states) and 90% (special states). The user's query mentions '90%', causing semantic attention to match the 90% clause and mistakenly confirm it for Haryana.",
+        "mitigation_implemented": "Structured prompt enforcing explicit geographical exclusion checks and strict verification of General vs Special category states before quoting percentages."
     },
     {
         "case_id": "fail_02",
-        "title": "Multi-Hop Cross-Scheme Temporal Calculations",
-        "query_example": "If I received PM-KISAN in December 2023, when can I apply for post-harvest claim if harvest is delayed?",
-        "failure_mode": "Single-step RAG may struggle to synthesize independent clauses across two unrelated policy guidelines (PM-KISAN disbursal cycle vs PMFBY 14-day post-harvest condition).",
-        "cause": "Independent documents chunked separately; question asks for compound hypothetical reasoning across separate ministries.",
-        "mitigation_implemented": "Context assembly ranks and returns chunks from both PM-KISAN and PMFBY side-by-side with distinct source tags."
+        "title": "Dual Temporal Constraint Confusion (PMFBY Post-Harvest vs Localized Calamity)",
+        "query_example": "My harvested wheat crop was lying cut in the field and got damaged by unseasonal rain 10 days after harvest. Can I claim under PMFBY if I intimate within 72 hours of the rain?",
+        "ground_truth": "Yes, eligible under Post-Harvest Loss (Clause 7.2) because damage occurred within the 14-day post-harvest window while in cut-and-spread condition, and intimation was reported within 72 hours of the calamity.",
+        "failure_mode": "Naive AI hallucinates a refusal ('No, 10 days is too late because claims must be made within 72 hours of harvest'), confusing the 72-hour reporting deadline with the 14-day post-harvest drying window.",
+        "cause": "Compounding temporal logic: Two different time clocks (14 days from harvest vs 72 hours from damage event) exist in the same policy document.",
+        "mitigation_implemented": "Section-level tagging separating localized standing crop damage from post-harvest cut-and-spread drying provisions."
+    },
+    {
+        "case_id": "fail_03",
+        "title": "Statutory Landowner vs Tenant Cultivator Eligibility Hallucination (PM-KISAN)",
+        "query_example": "I cultivate 3 hectares of agricultural land under a written tenancy lease agreement. Am I entitled to receive Rs. 6,000 per year under PM-KISAN?",
+        "ground_truth": "Strictly ineligible. Under PM-KISAN Operational Guidelines (Clause 2.1), benefits are legally restricted to landholder farmer families who own cultivable land in their own names in State revenue records. Tenant farmers and sharecroppers are completely excluded.",
+        "failure_mode": "Standard LLMs hallucinate that all small and marginal farmers cultivating less than 2-5 hectares are eligible, overlooking the statutory land title ownership mandate.",
+        "cause": "Prior web knowledge bias: Public training data loosely associates PM-KISAN with 'supporting small farmers', overriding subtle statutory definitions of 'landholder' in vector embeddings.",
+        "mitigation_implemented": "Lexical and semantic keyword anchoring on exclusionary definitions ('Landholder Farmer Family' vs 'Tenant Cultivator') with zero-tolerance grounding."
     }
 ]
 
