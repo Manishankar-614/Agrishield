@@ -17,70 +17,83 @@ export const FailureAnalysisView: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ maxWidth: '1350px', margin: '0 auto', padding: '24px' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 24px' }}>
       {/* Header Banner */}
-      <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+      <div className="warm-card" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <Bug size={24} color="#f59e0b" />
-          <h2 style={{ fontSize: '1.35rem', margin: 0 }}>Honest Failure Analysis & Architectural Upgrades</h2>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '8px',
+            background: 'var(--amber-100)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--amber-700)'
+          }}>
+            <Bug size={20} />
+          </div>
+          <h2 style={{ fontSize: '1.35rem', margin: 0, color: 'var(--forest-900)' }}>
+            Honest Failure Analysis & System Upgrades
+          </h2>
         </div>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-          As required by the Judging Rubric, this section documents real failure modes encountered during development, their underlying mathematical/linguistic causes, and the concrete mitigations engineered into AgriShield.
+        <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', margin: 0 }}>
+          As required by the Judging Rubric, this section documents real failure modes encountered during development, their root causes, and the concrete mitigations engineered into AgriShield.
         </p>
       </div>
 
       {/* Failure Cases Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', marginBottom: '28px' }}>
         {failures.map((f, idx) => (
-          <div key={f.case_id} className="glass-panel" style={{ padding: '24px', borderTop: '3px solid #f59e0b' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <span className="badge-tag" style={{ color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.4)' }}>
+          <div key={f.case_id} className="warm-card" style={{ padding: '24px', borderTop: '3px solid var(--amber-600)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span className="badge-tag" style={{ color: 'var(--amber-700)', fontWeight: 700 }}>
                 Failure Case {idx + 1}
               </span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
                 {f.case_id}
               </span>
             </div>
 
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '12px', color: '#f8fafc' }}>
+            <h3 style={{ fontSize: '1.08rem', fontWeight: 700, marginBottom: '10px', color: 'var(--forest-900)' }}>
               {f.title}
             </h3>
 
             {/* Test Query Box */}
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '16px', border: '1px solid var(--border-color)' }}>
-              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>
+            <div style={{ background: 'var(--bg-app)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '14px', border: '1px solid var(--border-light)' }}>
+              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>
                 Trigger Query:
               </span>
-              <code style={{ color: '#a7f3d0' }}>"{f.query_example}"</code>
+              <code style={{ color: 'var(--forest-800)', fontWeight: 600 }}>"{f.query_example}"</code>
             </div>
 
             {/* Failure Mode & Root Cause */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
-              <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '12px', borderRadius: '8px' }}>
-                <span style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
-                  <AlertCircle size={14} /> Observed Failure Mode
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ background: 'var(--red-50)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '12px', borderRadius: '8px' }}>
+                <span style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
+                  <AlertCircle size={13} /> Observed Failure Mode
                 </span>
-                <p style={{ fontSize: '0.82rem', color: '#fca5a5', margin: 0, lineHeight: '1.5' }}>
+                <p style={{ fontSize: '0.82rem', color: '#7f1d1d', margin: 0, lineHeight: '1.5' }}>
                   {f.failure_mode}
                 </p>
               </div>
 
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px' }}>
-                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
+              <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-light)', padding: '12px', borderRadius: '8px' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
                   Underlying Root Cause
                 </span>
-                <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: 0, lineHeight: '1.5' }}>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-main)', margin: 0, lineHeight: '1.5' }}>
                   {f.cause}
                 </p>
               </div>
             </div>
 
             {/* Implemented Mitigation */}
-            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(52, 211, 153, 0.3)', padding: '14px', borderRadius: '8px' }}>
-              <span style={{ color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
-                <CheckCircle size={15} /> Implemented System Mitigation
+            <div style={{ background: 'var(--forest-50)', border: '1px solid rgba(45, 106, 79, 0.3)', padding: '14px', borderRadius: '8px' }}>
+              <span style={{ color: 'var(--forest-800)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
+                <CheckCircle size={14} /> Implemented System Mitigation
               </span>
-              <p style={{ fontSize: '0.83rem', color: '#d1fae5', margin: 0, lineHeight: '1.5' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--forest-900)', margin: 0, lineHeight: '1.5' }}>
                 {f.mitigation_implemented}
               </p>
             </div>
@@ -88,38 +101,40 @@ export const FailureAnalysisView: React.FC = () => {
         ))}
       </div>
 
-      {/* Upgrades & Technical Rigor Section (Rubric 5 pts) */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-          <Cpu size={22} color="#10b981" />
-          <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Architectural Upgrades (Rubric Criteria: Creativity & Upgrades)</h3>
+      {/* Upgrades Section */}
+      <div className="warm-card" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <Cpu size={18} color="var(--forest-800)" />
+          <h3 style={{ fontSize: '1.15rem', margin: 0, color: 'var(--forest-900)' }}>
+            Architectural Upgrades (Creativity & Upgrades Rubric)
+          </h3>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 700, marginBottom: '6px', fontSize: '0.9rem' }}>
-              <GitBranch size={16} /> 1. Hybrid Reciprocal Rank Fusion (RRF)
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+          <div style={{ background: 'var(--bg-app)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--forest-800)', fontWeight: 700, marginBottom: '6px', fontSize: '0.88rem' }}>
+              <GitBranch size={15} /> 1. Hybrid Lexical-Dense RRF
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-              Combines lexical BM25Okapi token matching with dense 384-dimensional SentenceTransformer embeddings using rank-weighted reciprocal fusion (k=60).
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+              Combines BM25Okapi lexical matching with dense SentenceTransformer embeddings via rank reciprocal fusion ($k=60$).
             </p>
           </div>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 700, marginBottom: '6px', fontSize: '0.9rem' }}>
-              <Zap size={16} /> 2. Agricultural Query Rewriting
+          <div style={{ background: 'var(--bg-app)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--forest-800)', fontWeight: 700, marginBottom: '6px', fontSize: '0.88rem' }}>
+              <Zap size={15} /> 2. Query Expansion Engine
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-              Detects domain abbreviations (e.g., 'kusum', 'pmfby', 'shc', 'drone') and injects full official statutory terms to eliminate vocabulary mismatch.
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+              Translates acronyms (e.g., 'kusum', 'pmfby', 'shc') into full statutory terms to prevent keyword mismatch.
             </p>
           </div>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 700, marginBottom: '6px', fontSize: '0.9rem' }}>
-              <ShieldAlert size={16} /> 3. Strict Anti-Hallucination Gate
+          <div style={{ background: 'var(--bg-app)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--forest-800)', fontWeight: 700, marginBottom: '6px', fontSize: '0.88rem' }}>
+              <ShieldAlert size={15} /> 3. Domain Upload Guardrail
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-              Enforces a dual similarity threshold check + system prompt refusal mandate. Any out-of-domain query is refused with "I cannot find this information".
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+              Rejects any non-agricultural document uploaded to prevent corpus pollution and hallucination risks.
             </p>
           </div>
         </div>

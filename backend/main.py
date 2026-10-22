@@ -132,6 +132,20 @@ def get_benchmark():
         "failure_analyses": FAILURE_CASES
     }
 
+class UploadDocRequest(BaseModel):
+    title: str
+    content: str
+
+@app.post("/api/documents")
+def upload_document(req: UploadDocRequest):
+    if not req.title.strip() or not req.content.strip():
+        raise HTTPException(status_code=400, detail="Title and content cannot be empty.")
+    
+    result = rag_engine.add_document(title=req.title, content=req.content)
+    if not result.get("success"):
+        raise HTTPException(status_code=422, detail=result.get("reason", "Document rejected by domain guardrail."))
+    return result
+
 @app.get("/api/documents")
 def get_documents():
     docs_summary = {}

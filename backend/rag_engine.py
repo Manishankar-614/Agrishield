@@ -128,6 +128,88 @@ class AgriRAGEngine:
 
         print(f"Total chunks indexed: {len(self.chunks)}")
 
+    def validate_agricultural_domain(self, text: str) -> Tuple[bool, str, float]:
+        """Validates whether an uploaded document is legitimately related to the agricultural domain."""
+        if len(text.strip()) < 80:
+            return False, "Document content is too short (minimum 80 characters required).", 0.0
+
+        # 1. Agricultural Lexicon Density Check
+        agri_keywords = [
+            "agriculture", "agricultural", "farmer", "farmers", "farming", "crop", "crops",
+            "soil", "irrigation", "subsidy", "subsidies", "fertilizer", "fertilizers",
+            "pesticide", "harvest", "seed", "seeds", "kisan", "cultivation", "monsoon",
+            "horticulture", "agronomy", "fpo", "tractors", "livestock", "yield", "acre",
+            "hectare", "mandis", "apmc", "icar", "pmfby", "kusum", "dap", "urea", "kharif", "rabi"
+        ]
+        
+        lower_text = text.lower()
+        matched_keywords = set()
+        for kw in agri_keywords:
+            if re.search(r'\b' + re.escape(kw) + r'\b', lower_text):
+                matched_keywords.add(kw)
+
+        # 2. Semantic Similarity against Agricultural Centroid
+        anchor_concept = (
+            "Indian agriculture, agricultural schemes, farming subsidies, crop insurance, "
+            "soil fertility testing, irrigation systems, farmer welfare, and agricultural mechanization."
+        )
+        doc_sample = text[:1500]
+        embeddings = self.embed_model.encode([doc_sample, anchor_concept], convert_to_numpy=True, normalize_embeddings=True)
+        cosine_sim = float(np.dot(embeddings[0], embeddings[1]))
+
+        # Rejection rule: Must have agricultural keyword relevance AND semantic alignment
+        if len(matched_keywords) < 2 and cosine_sim < 0.25:
+            return (
+                False,
+                f"Rejected: Out-of-Domain Document. Detected only {len(matched_keywords)} agricultural terms and low semantic relevance ({round(cosine_sim, 2)}). AgriShield strictly enforces domain integrity to prevent knowledge base pollution.",
+                cosine_sim
+            )
+
+        return (
+            True,
+            f"Approved: Verified agricultural domain relevance (Semantic alignment: {round(cosine_sim, 2)}, Keywords matched: {len(matched_keywords)}).",
+            cosine_sim
+        )
+
+    def add_document(self, title: str, content: str) -> Dict[str, Any]:
+        """Dynamically validates, stores, chunks, and indexes a new document into the RAG knowledge base."""
+        # Validate domain
+        is_valid, message, score = self.validate_agricultural_domain(content)
+        if not is_valid:
+            return {
+                "success": False,
+                "reason": message,
+                "score": score
+            }
+
+        # Clean title for filename
+        clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', title).strip().replace(' ', '_')
+        if not clean_title:
+            clean_title = f"Custom_Agri_Doc_{int(time.time())}"
+        filename = f"{clean_title}.md"
+        file_path = os.path.join(self.data_dir, filename)
+
+        # Ensure header in content
+        if not content.strip().startswith('#'):
+            formatted_content = f"# {title}\n\n{content}"
+        else:
+            formatted_content = content
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(formatted_content)
+
+        # Reload all documents and rebuild indices
+        self.load_documents()
+        self.build_indices()
+
+        return {
+            "success": True,
+            "filename": filename,
+            "message": message,
+            "total_chunks": len(self.chunks),
+            "total_documents": len(set(c.doc_name for c in self.chunks))
+        }
+
     def build_indices(self):
         # 1. BM25 Indexing
         self.tokenized_corpus = [self._tokenize(c.content) for c in self.chunks]

@@ -1,3 +1,4 @@
+
 # AgriShield (KrishiKavach) 🌾
 > **Anti-Hallucinatory Hybrid RAG Navigator for Indian Agricultural Government Schemes & Claims**  
 > *Developed for "From Text to Insight: Ask Your Documents" — Global Academy of Technology (22 October 2026)*
