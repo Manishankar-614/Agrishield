@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { AskDocsView } from './components/AskDocsView';
-import { UploadDocView } from './components/UploadDocView';
+import { DashboardView } from './components/DashboardView';
+import { ChatView } from './components/ChatView';
+import { KnowledgeBaseView } from './components/KnowledgeBaseView';
 import { BenchmarkView } from './components/BenchmarkView';
-import { FailureAnalysisView } from './components/FailureAnalysisView';
-import { DocumentExplorerView } from './components/DocumentExplorerView';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'ask' | 'upload' | 'benchmark' | 'failures' | 'docs'>('ask');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'ask' | 'docs' | 'benchmark'>('dashboard');
   const [backendHealthy, setBackendHealthy] = useState<boolean>(false);
 
   useEffect(() => {
@@ -34,17 +33,16 @@ export function App() {
       {/* Warm Left Sidebar */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={(t) => setActiveTab(t as any)}
+        setActiveTab={setActiveTab}
         backendHealthy={backendHealthy}
       />
 
       {/* Main View Area */}
       <main style={{ flex: 1, minHeight: '100vh', overflowY: 'auto' }}>
-        {activeTab === 'ask' && <AskDocsView />}
-        {activeTab === 'upload' && <UploadDocView />}
+        {activeTab === 'dashboard' && <DashboardView onNavigate={(t) => setActiveTab(t)} />}
+        {activeTab === 'ask' && <ChatView />}
+        {activeTab === 'docs' && <KnowledgeBaseView />}
         {activeTab === 'benchmark' && <BenchmarkView />}
-        {activeTab === 'failures' && <FailureAnalysisView />}
-        {activeTab === 'docs' && <DocumentExplorerView />}
       </main>
     </div>
   );
