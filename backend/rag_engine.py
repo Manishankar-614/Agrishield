@@ -5,7 +5,12 @@ import time
 from typing import List, Dict, Any, Tuple
 import numpy as np
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
+try:
+    from fastembed import TextEmbedding
+    HAS_FASTEMBED = True
+except ImportError:
+    HAS_FASTEMBED = False
+    from sentence_transformers import SentenceTransformer
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -59,15 +64,31 @@ class AgriRAGEngine:
         self.tokenized_corpus: List[List[str]] = []
         self.embeddings: np.ndarray = None
         
-        print("Initializing SentenceTransformer embedding model...")
-        try:
-            self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME, local_files_only=True)
-        except Exception:
-            self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        if HAS_FASTEMBED:
+            print("Initializing FastEmbed (ONNX) embedding model...")
+            self.embed_model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            self.use_fastembed = True
+        else:
+            print("Initializing SentenceTransformer embedding model...")
+            try:
+                self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME, local_files_only=True)
+            except Exception:
+                self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+            self.use_fastembed = False
         
         # Load and index documents
         self.load_documents()
         self.build_indices()
+        
+    def _encode_texts(self, texts: List[str]) -> np.ndarray:
+        if getattr(self, "use_fastembed", False):
+            embeddings = list(self.embed_model.embed(texts))
+            arr = np.array(embeddings, dtype=np.float32)
+            norms = np.linalg.norm(arr, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            return arr / norms
+        else:
+            return self.embed_model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
         
     def _tokenize(self, text: str) -> List[str]:
         # Clean and tokenize for BM25
@@ -174,7 +195,7 @@ class AgriRAGEngine:
             "soil fertility testing, irrigation systems, farmer welfare, and agricultural mechanization."
         )
         doc_sample = text[:1500]
-        embeddings = self.embed_model.encode([doc_sample, anchor_concept], convert_to_numpy=True, normalize_embeddings=True)
+        embeddings = self._encode_texts([doc_sample, anchor_concept])
         cosine_sim = float(np.dot(embeddings[0], embeddings[1]))
 
         # Rejection rule: Must have agricultural keyword relevance AND semantic alignment
@@ -235,11 +256,27 @@ class AgriRAGEngine:
         self.tokenized_corpus = [self._tokenize(c.content) for c in self.chunks]
         self.bm25 = BM25Okapi(self.tokenized_corpus)
         
-        # 2. Dense Vector Embeddings
-        print("Computing embeddings for dense vector index...")
+        # 2. Dense Vector Embeddings (with fast offline cache for instant startup)
+        cache_path = os.path.join(self.data_dir, "embeddings_cache.npz")
         chunk_texts = [f"{c.scheme} {c.section}: {c.content}" for c in self.chunks]
-        embeddings = self.embed_model.encode(chunk_texts, convert_to_numpy=True, normalize_embeddings=True)
+        
+        if os.path.exists(cache_path):
+            try:
+                cached = np.load(cache_path)
+                if "embeddings" in cached and len(cached["embeddings"]) == len(self.chunks):
+                    self.embeddings = cached["embeddings"]
+                    print(f"Loaded {len(self.embeddings)} dense embeddings from fast offline cache.")
+                    return
+            except Exception as e:
+                print(f"Cache read error: {e}, recomputing embeddings...")
+
+        print("Computing embeddings for dense vector index...")
+        embeddings = self._encode_texts(chunk_texts)
         self.embeddings = embeddings
+        try:
+            np.savez_compressed(cache_path, embeddings=embeddings)
+        except Exception:
+            pass
         print("Index construction complete.")
 
     def rewrite_query(self, query: str) -> str:
@@ -267,7 +304,7 @@ class AgriRAGEngine:
         bm25_ranked_indices = np.argsort(bm25_scores)[::-1]
         
         # 2. Dense Vector Semantic Similarity
-        query_vec = self.embed_model.encode([query], convert_to_numpy=True, normalize_embeddings=True)[0]
+        query_vec = self._encode_texts([query])[0]
         cosine_scores = np.dot(self.embeddings, query_vec)
         vector_ranked_indices = np.argsort(cosine_scores)[::-1]
         

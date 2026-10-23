@@ -3,6 +3,7 @@ import io
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import sys
 import pypdf
@@ -257,6 +258,14 @@ def get_documents():
             "chunks_count": meta["chunks_count"]
         })
     return {"documents": formatted}
+
+# Optional single-service deployment: If frontend is built into frontend/dist, serve it!
+FRONTEND_DIST = os.path.join(BACKEND_DIR, "..", "frontend", "dist")
+if not os.path.exists(FRONTEND_DIST):
+    FRONTEND_DIST = os.path.join(BACKEND_DIR, "dist")
+
+if os.path.exists(FRONTEND_DIST):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
