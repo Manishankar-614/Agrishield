@@ -97,7 +97,7 @@ class AgriRAGEngine:
         return tokens
 
     def load_documents(self):
-        doc_files = glob.glob(os.path.join(self.data_dir, "*.md"))
+        doc_files = sorted(glob.glob(os.path.join(self.data_dir, "*.md")))
         print(f"Found {len(doc_files)} policy documents in {self.data_dir}")
         
         self.chunks = []
@@ -260,10 +260,11 @@ class AgriRAGEngine:
         cache_path = os.path.join(self.data_dir, "embeddings_cache.npz")
         chunk_texts = [f"{c.scheme} {c.section}: {c.content}" for c in self.chunks]
         
+        current_ids = [c.chunk_id for c in self.chunks]
         if os.path.exists(cache_path):
             try:
                 cached = np.load(cache_path)
-                if "embeddings" in cached and len(cached["embeddings"]) == len(self.chunks):
+                if "chunk_ids" in cached and list(cached["chunk_ids"]) == current_ids and "embeddings" in cached:
                     self.embeddings = cached["embeddings"]
                     print(f"Loaded {len(self.embeddings)} dense embeddings from fast offline cache.")
                     return
@@ -274,7 +275,7 @@ class AgriRAGEngine:
         embeddings = self._encode_texts(chunk_texts)
         self.embeddings = embeddings
         try:
-            np.savez_compressed(cache_path, embeddings=embeddings)
+            np.savez_compressed(cache_path, chunk_ids=current_ids, embeddings=embeddings)
         except Exception:
             pass
         print("Index construction complete.")
